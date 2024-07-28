@@ -4,9 +4,6 @@ import ALSLib.ALSClient, ALSLib.TCPClient
 from ALSLib.ALSHelperFunctionLibrary import get_sensordata_path
 
 ALS_SERVER_IP_ADDRESS = '127.0.0.1'
-
-ego1_waypoints = []
-ego2_waypoints = []
 ###############################################################################
 class SensorDataThread(threading.Thread):
     def __init__(self, ThreadID, client, function):
@@ -68,6 +65,15 @@ class VehicleStatus:
         # Hesam Modifications
         self.waypoint_list = other.waypoint_list
         self.last_waypoint = other.last_waypoint
+
+    def get_distance_to_target(self):
+        if self.CurrentDestination and self.CurrentPosition:
+            dx = self.CurrentDestination[0] - self.CurrentPosition[0]
+            dy = self.CurrentDestination[1] - self.CurrentPosition[1]
+            distance = np.sqrt(dx ** 2 + dy ** 2)
+            return distance
+        else:
+            return None
 
 
 ###############################################################################
@@ -176,19 +182,26 @@ def SteerTowardsGoal(position, forward, right, destination):
 # Initialize the global lists
 ego1_waypoints = []
 ego2_waypoints = []
-sorted_ego1_positions = None
-sorted_ego2_positions = None
 spwanTest = 0
 waypoints_needs_sorting = True
+sorted_ego1_positions = None
+sorted_ego2_positions = None
 
-
+def compute_distance_to_target(self):
+    if self.CurrentDestination and self.CurrentPosition:
+        dx = self.CurrentDestination[0] - self.CurrentPosition[0]
+        dy = self.CurrentDestination[1] - self.CurrentPosition[1]
+        distance = np.sqrt(dx ** 2 + dy ** 2)
+        return distance
+    else:
+        return None
 def recieveObjectList(FilteredObject_Socket):
     def decodeJson(jsonstring):
         msg = json.loads(jsonstring)
         return msg
 
     global ego1_waypoints, ego2_waypoints
-    global spwanTest,waypoints_needs_sorting
+    global spwanTest,waypoints_needs_sorting,sorted_ego1_positions,sorted_ego2_positions
 
     while True:
         try:
@@ -213,13 +226,13 @@ def recieveObjectList(FilteredObject_Socket):
                     if waypoint_pos not in SimulationContext.vehicleStatus['Ego_2'].waypoint_list:
                         ego2_waypoints.append((waypoint_pos, dist))
 
-                # Sort the waypoints based on distance
-                ego1_waypoints.sort(key=lambda x: x[1])
-                ego2_waypoints.sort(key=lambda x: x[1])
+            # Sort the waypoints based on distance
+            ego1_waypoints.sort(key=lambda x: x[1])
+            ego2_waypoints.sort(key=lambda x: x[1])
 
-                # Extract the sorted positions
-                sorted_ego1_positions = [wp[0] for wp in ego1_waypoints]
-                sorted_ego2_positions = [wp[0] for wp in ego2_waypoints]
+            # Extract the sorted positions
+            sorted_ego1_positions = [wp[0] for wp in ego1_waypoints]
+            sorted_ego2_positions = [wp[0] for wp in ego2_waypoints]
 
             # Update the waypoint lists in SimulationContext
             SimulationContext.vehicleStatus['Ego_1'].waypoint_list = sorted_ego1_positions
@@ -395,12 +408,20 @@ def LaunchWorkshop():
             right_1 = parsedJson['Right']
             SimulationContext.vehicleStatus['Ego_1'].CurrentPosition = position_1
 
-            currentEntry = [SimulationContext.vehicleStatus['Ego_1'].SimulationTime, position_1[0], position_1[1], position_1[2],
-                            forward_1[0], forward_1[1], forward_1[2]]
+            # currentEntry = [SimulationContext.vehicleStatus['Ego_1'].SimulationTime, position_1[0], position_1[1], position_1[2],
+            #                 forward_1[0], forward_1[1], forward_1[2]]
             # PositionLog.append(currentEntry)
             # with open(get_sensordata_path('/Workshop/Positions.csv'), 'a') as csvfile:
             #     writer = csv.writer(csvfile)
             #     writer.writerow(currentEntry)
+        ego_1_dist_2_target = SimulationContext.vehicleStatus['Ego_1'].get_distance_to_target()
+        print(f"Ego_1 distance to first target= {ego_1_dist_2_target}")
+        print(f"Visited targets {SimulationContext.vehicleStatus['Ego_1'].num_waypoints_reached }")
+        if ego_1_dist_2_target > 50.0 and ego_1_dist_2_target < 3500.0 :
+            SimulationContext.vehicleStatus['Ego_1'].num_waypoints_reached +=1
+            if SimulationContext.vehicleStatus['Ego_1'].num_waypoints_reached > len(SimulationContext.vehicleStatus['Ego_1'].waypoint_list):
+                SimulationContext.vehicleStatus['Ego_1'].CurrentDestination = SimulationContext.vehicleStatus['Ego_1'].waypoint_list[SimulationContext.vehicleStatus['Ego_1'].num_waypoints_reached]
+                ego_1_dist_2_target = SimulationContext.vehicleStatus['Ego_1'].get_distance_to_target()
 
         if position_1 and forward_1 and right_1:
             (throttle_1, steering_1) = SteerTowardsGoal(position_1, forward_1, right_1,
@@ -416,12 +437,19 @@ def LaunchWorkshop():
             right_2 = parsedJson['Right']
             SimulationContext.vehicleStatus['Ego_2'].CurrentPosition = position_2
 
-            currentEntry = [SimulationContext.vehicleStatus['Ego_2'].SimulationTime, position_2[0], position_2[1], position_2[2],
-                            forward_2[0], forward_2[1], forward_2[2]]
+            # currentEntry = [SimulationContext.vehicleStatus['Ego_2'].SimulationTime, position_2[0], position_2[1], position_2[2],
+            #                 forward_2[0], forward_2[1], forward_2[2]]
             # PositionLog.append(currentEntry)
             # with open(get_sensordata_path('/Workshop/Positions.csv'), 'a') as csvfile:
             #     writer = csv.writer(csvfile)
             #     writer.writerow(currentEntry)
+        ego_2_dist_2_target = SimulationContext.vehicleStatus['Ego_2'].get_distance_to_target()
+        print(f"Ego_2 distance to first target= {ego_2_dist_2_target}")
+        if  ego_2_dist_2_target> 50.0 and ego_2_dist_2_target < 3500.0 :
+            SimulationContext.vehicleStatus['Ego_2'].num_waypoints_reached +=1
+            if SimulationContext.vehicleStatus['Ego_2'].num_waypoints_reached > len(SimulationContext.vehicleStatus['Ego_2'].waypoint_list):
+                SimulationContext.vehicleStatus['Ego_2'].CurrentDestination = SimulationContext.vehicleStatus['Ego_2'].waypoint_list[SimulationContext.vehicleStatus['Ego_2'].num_waypoints_reached]
+                ego_2_dist_2_target = SimulationContext.vehicleStatus['Ego_2'].get_distance_to_target()
 
         if position_2 and forward_2 and right_2:
             (throttle_2, steering_2) = SteerTowardsGoal(position_2, forward_2, right_2,
