@@ -86,45 +86,7 @@ def messageHandlerBoat(rawMessage):
             SimulationContext.should_end_simulation = True
             print("Timout recieved .. declaring end of test")
             SimulationContext.lock.release()
-        # if commandList[1].startswith("Waypoint"):
-        #     #print("Waypoint reached: ", commandList[1])
-        #     if SimulationContext.vehicleStatus['Ego_1'] != commandList[1]:
-        #         SimulationContext.vehicleStatus['Ego_1'].last_waypoint = commandList[1]
-        #         SimulationContext.vehicleStatus['Ego_1'].num_waypoints_reached += 1
-        #         SimulationContext.client.execute(
-        #             "SetObjectProperty StatusText TextToDisplay Reached_{0}_waypoints".format(
-        #                 SimulationContext.vehicleStatus['Ego_1'].num_waypoints_reached))
-        #         #SimulationContext.vehicleStatus['Ego_1'].current_target_waypoint = (SimulationContext.vehicleStatus['Ego_1'].current_target_waypoint + 1) % SimulationContext.vehicleStatus['Ego_1'].num_waypoints_sensed
-        #         #print(f"Number of elements is = {SimulationContext.vehicleStatus['Ego_1'].num_waypoints_sensed}")
-        #         if SimulationContext.vehicleStatus['Ego_1'].num_waypoints_reached <= SimulationContext.vehicleStatus['Ego_1'].num_waypoints_sensed:
-        #             # SimulationContext.vehicleStatus['Ego_1'].current_target_waypoint = (SimulationContext.vehicleStatus[
-        #             #                                                                         'Ego_1'].current_target_waypoint + 1) % \
-        #             #                                                                    SimulationContext.vehicleStatus[
-        #             #                                                                        'Ego_1'].num_waypoints_sensed
-        #             NxtPos = SimulationContext.vehicleStatus['Ego_1'].waypoint_list[SimulationContext.vehicleStatus['Ego_1'].num_waypoints_reached]
-        #             SimulationContext.vehicleStatus['Ego_1'].current_target_waypoint = NxtPos
-        #             print("New Destination chosen: Waypoint", SimulationContext.vehicleStatus['Ego_1'].current_target_waypoint,
-        #                   ", pos: ", SimulationContext.vehicleStatus['Ego_1'].current_target_waypoint)
-        #     elif SimulationContext.vehicleStatus['Ego_2'] != commandList[1]:
-        #         SimulationContext.vehicleStatus['Ego_2'].last_waypoint = commandList[1]
-        #         SimulationContext.vehicleStatus['Ego_2'].num_waypoints_reached += 1
-        #         SimulationContext.client.execute(
-        #             "SetObjectProperty StatusText TextToDisplay Reached_{0}_waypoints".format(
-        #                 SimulationContext.vehicleStatus['Ego_2'].num_waypoints_reached))
-        #         #print(f"Number of elements is = {SimulationContext.vehicleStatus['Ego_2'].num_waypoints_sensed}")
-        #         if SimulationContext.vehicleStatus['Ego_2'].num_waypoints_reached <= SimulationContext.vehicleStatus[
-        #             'Ego_2'].num_waypoints_sensed:
-        #                 # SimulationContext.vehicleStatus['Ego_2'].current_target_waypoint = (
-        #                 #                                                                            SimulationContext.vehicleStatus[
-        #                 #                                                                                'Ego_2'].current_target_waypoint + 1) % \
-        #                 #                                                                    SimulationContext.vehicleStatus[
-        #                 #                                                                        'Ego_2'].num_waypoints_sensed
-        #             NxtPos = SimulationContext.vehicleStatus['Ego_2'].waypoint_list[
-        #                 SimulationContext.vehicleStatus['Ego_2'].num_waypoints_reached]
-        #             SimulationContext.vehicleStatus['Ego_2'].current_target_waypoint = NxtPos
-        #             print("New Destination chosen: Waypoint",
-        #                   SimulationContext.vehicleStatus['Ego_2'].current_target_waypoint,
-        #                   ", pos: ", SimulationContext.vehicleStatus['Ego_2'].current_target_waypoint)
+            
     if commandList[0].startswith('Status'):
         SimulationContext.lock.acquire()
         SimulationContext.vehicleStatus['Ego_1'].SimulationTime = float(commandList[1])
