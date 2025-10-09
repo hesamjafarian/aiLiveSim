@@ -296,14 +296,6 @@ def LaunchWorkshop():
     lastStatus2 = SimulationContext.vehicleStatus['Ego_2'].SimulationTime
 
     datapath = get_sensordata_path('/Workshop/')
-    # if (os.path.exists(datapath)):
-    #     shutil.rmtree(datapath, ignore_errors=True)
-    #     time.sleep(1)
-    # os.mkdir(datapath)
-    # PositionLog = [['time', 'posX', 'posY', 'posZ', 'forwardX', 'forwardY', 'forwardZ']]
-    # with open(os.path.join(datapath, 'Positions.csv'), 'a') as csvfile:
-    #     writer = csv.writer(csvfile)
-    #     writer.writerow(PositionLog)
 
     while True:
         if SimulationContext.should_end_simulation == True:
