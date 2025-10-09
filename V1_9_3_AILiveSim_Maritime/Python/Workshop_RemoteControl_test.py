@@ -41,7 +41,7 @@ class ThreadedSensorRecieve:
 
 ###############################################################################
 class VehicleStatus:
-    def __init__(self, vehicle_id):
+    def __init__(self,vehicle_id):
         self.vehicle_id = vehicle_id
         self.SimulationTime = 0.0
         self.StatusString = ''
@@ -49,25 +49,31 @@ class VehicleStatus:
         self.CurrentPosition = [0.0, 0.0, 0.0]
         self.num_waypoints_reached = 0
         self.num_waypoints_sensed = 0
-        self.current_target_waypoint = -1  # Initialize as -1 to indicate no target
+        self.current_target_waypoint = []
+        # Hesam Modifications
         self.waypoint_list = []
         self.last_waypoint = ''
-        self.distance_to_target = float('inf')
 
-    def update_destination(self):
-        if self.num_waypoints_reached < len(self.waypoint_list):
-            self.CurrentDestination = self.waypoint_list[self.num_waypoints_reached]
-            self.distance_to_target = self.compute_distance_to_target()
+    def Copy(self, other):
+        self.SimulationTime = other.SimulationTime
+        self.StatusString = other.StatusString
+        self.CurrentDestination = other.CurrentDestination
+        self.CurrentPosition = other.CurrentPosition
+        self.num_waypoints_reached = other.num_waypoints_reached
+        self.num_waypoints_sensed = other.num_waypoints_sensed
+        self.current_target_waypoint = other.current_target_waypoint
+        # Hesam Modifications
+        self.waypoint_list = other.waypoint_list
+        self.last_waypoint = other.last_waypoint
 
-    def compute_distance_to_target(self):
+    def get_distance_to_target(self):
         if self.CurrentDestination and self.CurrentPosition:
             dx = self.CurrentDestination[0] - self.CurrentPosition[0]
             dy = self.CurrentDestination[1] - self.CurrentPosition[1]
-            dz = self.CurrentDestination[2] - self.CurrentPosition[2]
-            distance = np.sqrt(dx ** 2 + dy ** 2 + dz ** 2)
+            distance = np.sqrt(dx ** 2 + dy ** 2)
             return distance
-        return float('inf')
-
+        else:
+            return None
 
 
 ###############################################################################
@@ -75,16 +81,57 @@ def messageHandlerBoat(rawMessage):
     str = rawMessage.decode('utf-8')
     commandList = str.split(" ")
     if commandList[0].startswith('EndCondition'):
-        if commandList[1].startswith("TimeEnded"):
+        if (commandList[1].startswith("TimeEnded")):
             SimulationContext.lock.acquire()
             SimulationContext.should_end_simulation = True
-            print("Timeout received .. declaring end of test")
+            print("Timout recieved .. declaring end of test")
             SimulationContext.lock.release()
+        # if commandList[1].startswith("Waypoint"):
+        #     #print("Waypoint reached: ", commandList[1])
+        #     if SimulationContext.vehicleStatus['Ego_1'] != commandList[1]:
+        #         SimulationContext.vehicleStatus['Ego_1'].last_waypoint = commandList[1]
+        #         SimulationContext.vehicleStatus['Ego_1'].num_waypoints_reached += 1
+        #         SimulationContext.client.execute(
+        #             "SetObjectProperty StatusText TextToDisplay Reached_{0}_waypoints".format(
+        #                 SimulationContext.vehicleStatus['Ego_1'].num_waypoints_reached))
+        #         #SimulationContext.vehicleStatus['Ego_1'].current_target_waypoint = (SimulationContext.vehicleStatus['Ego_1'].current_target_waypoint + 1) % SimulationContext.vehicleStatus['Ego_1'].num_waypoints_sensed
+        #         #print(f"Number of elements is = {SimulationContext.vehicleStatus['Ego_1'].num_waypoints_sensed}")
+        #         if SimulationContext.vehicleStatus['Ego_1'].num_waypoints_reached <= SimulationContext.vehicleStatus['Ego_1'].num_waypoints_sensed:
+        #             # SimulationContext.vehicleStatus['Ego_1'].current_target_waypoint = (SimulationContext.vehicleStatus[
+        #             #                                                                         'Ego_1'].current_target_waypoint + 1) % \
+        #             #                                                                    SimulationContext.vehicleStatus[
+        #             #                                                                        'Ego_1'].num_waypoints_sensed
+        #             NxtPos = SimulationContext.vehicleStatus['Ego_1'].waypoint_list[SimulationContext.vehicleStatus['Ego_1'].num_waypoints_reached]
+        #             SimulationContext.vehicleStatus['Ego_1'].current_target_waypoint = NxtPos
+        #             print("New Destination chosen: Waypoint", SimulationContext.vehicleStatus['Ego_1'].current_target_waypoint,
+        #                   ", pos: ", SimulationContext.vehicleStatus['Ego_1'].current_target_waypoint)
+        #     elif SimulationContext.vehicleStatus['Ego_2'] != commandList[1]:
+        #         SimulationContext.vehicleStatus['Ego_2'].last_waypoint = commandList[1]
+        #         SimulationContext.vehicleStatus['Ego_2'].num_waypoints_reached += 1
+        #         SimulationContext.client.execute(
+        #             "SetObjectProperty StatusText TextToDisplay Reached_{0}_waypoints".format(
+        #                 SimulationContext.vehicleStatus['Ego_2'].num_waypoints_reached))
+        #         #print(f"Number of elements is = {SimulationContext.vehicleStatus['Ego_2'].num_waypoints_sensed}")
+        #         if SimulationContext.vehicleStatus['Ego_2'].num_waypoints_reached <= SimulationContext.vehicleStatus[
+        #             'Ego_2'].num_waypoints_sensed:
+        #                 # SimulationContext.vehicleStatus['Ego_2'].current_target_waypoint = (
+        #                 #                                                                            SimulationContext.vehicleStatus[
+        #                 #                                                                                'Ego_2'].current_target_waypoint + 1) % \
+        #                 #                                                                    SimulationContext.vehicleStatus[
+        #                 #                                                                        'Ego_2'].num_waypoints_sensed
+        #             NxtPos = SimulationContext.vehicleStatus['Ego_2'].waypoint_list[
+        #                 SimulationContext.vehicleStatus['Ego_2'].num_waypoints_reached]
+        #             SimulationContext.vehicleStatus['Ego_2'].current_target_waypoint = NxtPos
+        #             print("New Destination chosen: Waypoint",
+        #                   SimulationContext.vehicleStatus['Ego_2'].current_target_waypoint,
+        #                   ", pos: ", SimulationContext.vehicleStatus['Ego_2'].current_target_waypoint)
     if commandList[0].startswith('Status'):
         SimulationContext.lock.acquire()
         SimulationContext.vehicleStatus['Ego_1'].SimulationTime = float(commandList[1])
+        #print(f"Simulation Time Ego1: {SimulationContext.vehicleStatus['Ego_1'].SimulationTime}")
         SimulationContext.vehicleStatus['Ego_1'].StatusString = commandList[2]
         SimulationContext.vehicleStatus['Ego_2'].SimulationTime = float(commandList[1])
+        #print(f"Simulation Time Ego2: {SimulationContext.vehicleStatus['Ego_2'].SimulationTime}")
         SimulationContext.vehicleStatus['Ego_2'].StatusString = commandList[2]
         SimulationContext.lock.release()
 
@@ -133,13 +180,20 @@ def SteerTowardsGoal(position, forward, right, destination):
 
 ###############################################################################
 # Initialize the global lists
+ego1_waypoints = []
+ego2_waypoints = []
+spwanTest = 0
+waypoints_needs_sorting = True
+sorted_ego1_positions = None
+sorted_ego2_positions = None
+
 def recieveObjectList(FilteredObject_Socket):
     def decodeJson(jsonstring):
         msg = json.loads(jsonstring)
         return msg
 
     global ego1_waypoints, ego2_waypoints
-    global waypoints_needs_sorting, sorted_ego1_positions, sorted_ego2_positions
+    global spwanTest,waypoints_needs_sorting,sorted_ego1_positions,sorted_ego2_positions
 
     while True:
         try:
@@ -152,22 +206,18 @@ def recieveObjectList(FilteredObject_Socket):
         message = data.decode('utf-8')
         decoded = decodeJson(message)
 
-        waypoints_updated = False
+        if waypoints_needs_sorting:
+            # Process each element in the message
+            for num, element in enumerate(decoded["MSG"]):
+                waypoint_pos = element["Pos"]
+                dist = element["Dist"]
+                if element['Alias'].startswith('Ego1'):
+                    if waypoint_pos not in SimulationContext.vehicleStatus['Ego_1'].waypoint_list:
+                        ego1_waypoints.append((waypoint_pos, dist))
+                elif element['Alias'].startswith('Ego2'):
+                    if waypoint_pos not in SimulationContext.vehicleStatus['Ego_2'].waypoint_list:
+                        ego2_waypoints.append((waypoint_pos, dist))
 
-        # Process each element in the message
-        for num, element in enumerate(decoded["MSG"]):
-            waypoint_pos = element["Pos"]
-            dist = element["Dist"]
-            if element['Alias'].startswith('Ego1'):
-                if waypoint_pos not in SimulationContext.vehicleStatus['Ego_1'].waypoint_list:
-                    ego1_waypoints.append((waypoint_pos, dist))
-                    waypoints_updated = True
-            elif element['Alias'].startswith('Ego2'):
-                if waypoint_pos not in SimulationContext.vehicleStatus['Ego_2'].waypoint_list:
-                    ego2_waypoints.append((waypoint_pos, dist))
-                    waypoints_updated = True
-
-        if waypoints_updated:
             # Sort the waypoints based on distance
             ego1_waypoints.sort(key=lambda x: x[1])
             ego2_waypoints.sort(key=lambda x: x[1])
@@ -183,34 +233,40 @@ def recieveObjectList(FilteredObject_Socket):
             SimulationContext.vehicleStatus['Ego_2'].num_waypoints_sensed = len(sorted_ego2_positions)
 
             # Set the first destination if not already set
-            if SimulationContext.vehicleStatus['Ego_1'].current_target_waypoint == -1 and sorted_ego1_positions:
-                SimulationContext.vehicleStatus['Ego_1'].update_destination()
-                print("First destination for Ego1: ", SimulationContext.vehicleStatus['Ego_1'].CurrentDestination)
+            if  not SimulationContext.vehicleStatus['Ego_1'].current_target_waypoint and sorted_ego1_positions:
+                SimulationContext.vehicleStatus['Ego_1'].current_target_waypoint = 0
+                chosenPos1 = sorted_ego1_positions[0]
+                SimulationContext.vehicleStatus['Ego_1'].CurrentDestination = chosenPos1
+                print("First destination for Ego1: ", chosenPos1)
 
-            if SimulationContext.vehicleStatus['Ego_2'].current_target_waypoint == -1 and sorted_ego2_positions:
-                SimulationContext.vehicleStatus['Ego_2'].update_destination()
-                print("First destination for Ego2: ", SimulationContext.vehicleStatus['Ego_2'].CurrentDestination)
+            if  not SimulationContext.vehicleStatus['Ego_2'].current_target_waypoint and sorted_ego2_positions:
+                SimulationContext.vehicleStatus['Ego_2'].current_target_waypoint = 0
+                chosenPos2 = sorted_ego2_positions[0]
+                SimulationContext.vehicleStatus['Ego_2'].CurrentDestination = chosenPos2
+                print("First destination for Ego2: ", chosenPos2)
+            waypoints_needs_sorting = False
+            # Always spawn spheres for current destinations
+        #SimulationContext.lock.acquire()
+        SimulationContext.client.request(
+            'SpawnDebugSphere {pos1} {pos2} {pos3} 2.5 2.5 2.5 {color} 1'.format(
+                pos1=SimulationContext.vehicleStatus['Ego_1'].CurrentDestination[0],
+                pos2=SimulationContext.vehicleStatus['Ego_1'].CurrentDestination[1],
+                pos3=SimulationContext.vehicleStatus['Ego_1'].CurrentDestination[2] + 250,
+                color="bluesphere"))
 
-        # Always spawn spheres for current destinations
-        if sorted_ego1_positions:
-            SimulationContext.client.request(
-                'SpawnDebugSphere {pos1} {pos2} {pos3} 2.5 2.5 2.5 {color} 1'.format(
-                    pos1=SimulationContext.vehicleStatus['Ego_1'].CurrentDestination[0],
-                    pos2=SimulationContext.vehicleStatus['Ego_1'].CurrentDestination[1],
-                    pos3=SimulationContext.vehicleStatus['Ego_1'].CurrentDestination[2] + 250,
-                    color="bluesphere"))
-
-        if sorted_ego2_positions:
-            SimulationContext.client.request(
-                'SpawnDebugSphere {pos1} {pos2} {pos3} 2.5 2.5 2.5 {color} 1'.format(
-                    pos1=SimulationContext.vehicleStatus['Ego_2'].CurrentDestination[0],
-                    pos2=SimulationContext.vehicleStatus['Ego_2'].CurrentDestination[1],
-                    pos3=SimulationContext.vehicleStatus['Ego_2'].CurrentDestination[2] + 250,
-                    color="redsphere"))
-
+        SimulationContext.client.request(
+            'SpawnDebugSphere {pos1} {pos2} {pos3} 2.5 2.5 2.5 {color} 1'.format(
+                pos1=SimulationContext.vehicleStatus['Ego_2'].CurrentDestination[0],
+                pos2=SimulationContext.vehicleStatus['Ego_2'].CurrentDestination[1],
+                pos3=SimulationContext.vehicleStatus['Ego_2'].CurrentDestination[2] + 250,
+                color="redsphere"))
+        #SimulationContext.lock.release()
         if SimulationContext.should_end_simulation:
             break
 
+
+
+###############################################################################
 def LaunchWorkshop():
     SimulationContext.client.connect()
 
@@ -239,9 +295,19 @@ def LaunchWorkshop():
     lastStatus1 = SimulationContext.vehicleStatus['Ego_1'].SimulationTime
     lastStatus2 = SimulationContext.vehicleStatus['Ego_2'].SimulationTime
 
+    datapath = get_sensordata_path('/Workshop/')
+    # if (os.path.exists(datapath)):
+    #     shutil.rmtree(datapath, ignore_errors=True)
+    #     time.sleep(1)
+    # os.mkdir(datapath)
+    # PositionLog = [['time', 'posX', 'posY', 'posZ', 'forwardX', 'forwardY', 'forwardZ']]
+    # with open(os.path.join(datapath, 'Positions.csv'), 'a') as csvfile:
+    #     writer = csv.writer(csvfile)
+    #     writer.writerow(PositionLog)
+
     while True:
-        if SimulationContext.should_end_simulation:
-            print('End of test received')
+        if SimulationContext.should_end_simulation == True:
+            print('end of test received')
             break
         time.sleep(0.05)
 
@@ -255,17 +321,20 @@ def LaunchWorkshop():
             forward_1 = parsedJson['Forward']
             right_1 = parsedJson['Right']
             SimulationContext.vehicleStatus['Ego_1'].CurrentPosition = position_1
-            SimulationContext.vehicleStatus['Ego_1'].distance_to_target = SimulationContext.vehicleStatus['Ego_1'].compute_distance_to_target()
 
-        ego_1_dist_2_target = SimulationContext.vehicleStatus['Ego_1'].distance_to_target
-        print(f"Ego_1 distance to target= {ego_1_dist_2_target}")
-        print(f"Visited targets {SimulationContext.vehicleStatus['Ego_1'].num_waypoints_reached}")
+        ego_1_dist_2_target = SimulationContext.vehicleStatus['Ego_1'].get_distance_to_target()
+        print(f"Ego_1 distance to first target= {ego_1_dist_2_target}")
+        print(f"Ego_1 Visited targets {SimulationContext.vehicleStatus['Ego_1'].num_waypoints_reached }")
 
-        if ego_1_dist_2_target < 3500.0:  # Threshold for considering waypoint reached
-            SimulationContext.vehicleStatus['Ego_1'].num_waypoints_reached += 1
-            SimulationContext.vehicleStatus['Ego_1'].update_destination()
+        if 50.0 < ego_1_dist_2_target < 3200.0:
+            if SimulationContext.vehicleStatus['Ego_1'].num_waypoints_reached < len(SimulationContext.vehicleStatus['Ego_1'].waypoint_list):
+                SimulationContext.vehicleStatus['Ego_1'].num_waypoints_reached += 1
+                if SimulationContext.vehicleStatus['Ego_1'].num_waypoints_reached < len(SimulationContext.vehicleStatus['Ego_1'].waypoint_list):
+                    SimulationContext.vehicleStatus['Ego_1'].CurrentDestination = SimulationContext.vehicleStatus['Ego_1'].waypoint_list[SimulationContext.vehicleStatus['Ego_1'].num_waypoints_reached]
+                    ego_1_dist_2_target = SimulationContext.vehicleStatus['Ego_1'].get_distance_to_target()
+                    print(f"Updated distance to target for Ego_1 = {ego_1_dist_2_target}")
 
-        if position_1 and forward_1 and right_1:
+        if position_1 and forward_1 and right_1 and SimulationContext.vehicleStatus['Ego_1'].num_waypoints_reached < 4:
             (throttle_1, steering_1) = SteerTowardsGoal(position_1, forward_1, right_1,
                                                         SimulationContext.vehicleStatus['Ego_1'].CurrentDestination)
             command_string = 'SetControl t:%f s:%f' % (throttle_1, steering_1)
@@ -278,16 +347,20 @@ def LaunchWorkshop():
             forward_2 = parsedJson['Forward']
             right_2 = parsedJson['Right']
             SimulationContext.vehicleStatus['Ego_2'].CurrentPosition = position_2
-            SimulationContext.vehicleStatus['Ego_2'].distance_to_target = SimulationContext.vehicleStatus['Ego_2'].compute_distance_to_target()
 
-        ego_2_dist_2_target = SimulationContext.vehicleStatus['Ego_2'].distance_to_target
-        print(f"Ego_2 distance to target= {ego_2_dist_2_target}")
+        ego_2_dist_2_target = SimulationContext.vehicleStatus['Ego_2'].get_distance_to_target()
+        print(f"Ego_2 distance to first target= {ego_2_dist_2_target}")
+        print(f"Ego_2 Visited targets {SimulationContext.vehicleStatus['Ego_2'].num_waypoints_reached}")
 
-        if ego_2_dist_2_target < 3500.0:  # Threshold for considering waypoint reached
-            SimulationContext.vehicleStatus['Ego_2'].num_waypoints_reached += 1
-            SimulationContext.vehicleStatus['Ego_2'].update_destination()
+        if 50.0 < ego_2_dist_2_target < 3200.0:
+            if SimulationContext.vehicleStatus['Ego_2'].num_waypoints_reached < len(SimulationContext.vehicleStatus['Ego_2'].waypoint_list):
+                SimulationContext.vehicleStatus['Ego_2'].num_waypoints_reached += 1
+                if SimulationContext.vehicleStatus['Ego_2'].num_waypoints_reached < len(SimulationContext.vehicleStatus['Ego_2'].waypoint_list):
+                    SimulationContext.vehicleStatus['Ego_2'].CurrentDestination = SimulationContext.vehicleStatus['Ego_2'].waypoint_list[SimulationContext.vehicleStatus['Ego_2'].num_waypoints_reached]
+                    ego_2_dist_2_target = SimulationContext.vehicleStatus['Ego_2'].get_distance_to_target()
+                    print(f"Updated distance to target for Ego_2 = {ego_2_dist_2_target}")
 
-        if position_2 and forward_2 and right_2:
+        if position_2 and forward_2 and right_2 and right_1 and SimulationContext.vehicleStatus['Ego_2'].num_waypoints_reached < 4:
             (throttle_2, steering_2) = SteerTowardsGoal(position_2, forward_2, right_2,
                                                         SimulationContext.vehicleStatus['Ego_2'].CurrentDestination)
             command_string = 'SetControl t:%f s:%f' % (throttle_2, steering_2)
@@ -302,3 +375,4 @@ print("Start the demo ")
 LaunchWorkshop()
 
 print("--- end of script ---")
+

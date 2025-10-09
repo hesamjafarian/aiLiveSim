@@ -123,7 +123,7 @@ class SimulationContext:
     }
 ###############################################################################
 def SteerTowardsGoal(position, forward, right, destination,vehicle_id):
-    print(f'Vehicle {vehicle_id} Pos= {position} Forward={forward}, Right={right}, Destination={destination}')
+    #print(f'Vehicle {vehicle_id} Pos= {position} Forward={forward}, Right={right}, Destination={destination}')
     d = np.asarray(destination)
     p = np.asarray(position)
     targetDir = d - p
@@ -308,7 +308,7 @@ def control_boat(vehicle_id, control_socket, sync_event):
         time.sleep(0.05)
 
 
-import random
+#import random
 
 #
 # def generate_random_coordinates(base_pos, deviation=50):

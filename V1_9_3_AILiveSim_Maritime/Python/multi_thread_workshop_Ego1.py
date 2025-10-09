@@ -260,6 +260,7 @@ def control_boat(vehicle_id, control_socket, sync_event):
             (throttle, steering) = SteerTowardsGoal(position, forward, right,
                                                     SimulationContext.vehicleStatus[vehicle_id].CurrentDestination)
             command_string = 'SetControl t:%f s:%f' % (throttle, steering)
+            print(f"Sending data to the vehicle = {vehicle_id} using=  {command_string}\n")
             control_socket.write(command_string.encode('utf-8'))
 
         sync_event.set()
